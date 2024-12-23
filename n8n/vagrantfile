@@ -1,63 +1,56 @@
 Vagrant.configure("2") do |config|
-    config.vm.box = "hashicorp/bionic64"
-    config.vm.network "forwarded_port", guest: 80, host: 80
-  
-    config.vm.provision "shell", inline: <<-SHELL
-      sudo apt-get update -y
-      sudo apt-get upgrade -y
-  
-      # Docker
-      sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-      sudo apt-get update -y
-      sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-  
-      # add user 'vagrant' 
-      sudo usermod -aG docker vagrant
-  
-      # Node.js (20.x)
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-      sudo apt-get install -y nodejs
-  
-      # check and run docker
-      sudo systemctl start docker
-      sudo systemctl enable docker
-  
-      # Nginx
-      sudo apt-get install -y nginx
-  
-      # check and run nginx
-      sudo systemctl start nginx
-      sudo systemctl enable nginx
-    SHELL
-  
-    config.vm.provision "shell", inline: <<-'SHELL'
-      cat <<EOL > /etc/nginx/sites-available/default
-      server {
-        listen 80;
-        location / {
-            proxy_pass http://localhost:5678;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host \$host;
-            proxy_cache_bypass \$http_upgrade;
-        }
+  config.vm.box = "hashicorp/bionic64"
+  config.vm.network "forwarded_port", guest: 80, host: 5678
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update -y
+    sudo apt-get upgrade -y
+
+    # Docker
+    sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    sudo apt-get update -y
+    sudo apt-get install -y docker-ce
+
+    # add user 'vagrant' 
+    sudo usermod -aG docker vagrant
+
+    # Node.js (20.x)
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+
+    # check and run docker
+    sudo systemctl start docker
+    sudo systemctl enable docker
+
+    # Nginx
+    sudo apt-get install -y nginx
+
+    # check and run nginx
+    sudo systemctl start nginx
+    sudo systemctl enable nginx
+  SHELL
+
+  config.vm.provision "shell", inline: <<-'SHELL'
+    cat <<EOL > /etc/nginx/sites-available/default
+    server {
+      listen 80;
+      location / {
+          proxy_pass http://localhost:5678;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade \$http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_set_header Host \$host;
+          proxy_cache_bypass \$http_upgrade;
       }
-  EOL
-    SHELL
-  
-    config.vm.provision "shell", inline: <<-SHELL
-      sudo systemctl restart nginx
-      docker volume create n8n_data
-      docker run -d \
-      --name n8n \
-      -p 5678:5678 \
-      -e N8N_BASIC_AUTH_ACTIVE=true \
-      -e N8N_BASIC_AUTH_USER=Huy \
-      -e N8N_BASIC_AUTH_PASSWORD=1 \
-      n8nio/n8n
-      docker run --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
-    SHELL
+    }
+EOL
+  SHELL
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo systemctl restart nginx
+    docker volume create n8n_data
+    docker run --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
+  SHELL
 end

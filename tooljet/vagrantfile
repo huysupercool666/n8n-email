@@ -3,7 +3,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "hashicorp/bionic64"
 
   # Cấu hình mạng private
-  config.vm.network "forwarded_port", guest: 81, host: 81
+  config.vm.network "forwarded_port", guest: 80, host: 80
 
   # Cấu hình cài đặt máy ảo
   config.vm.provider "virtualbox" do |vb|
@@ -30,6 +30,6 @@ Vagrant.configure("2") do |config|
     # Tạo volume cho PostgreSQL
     docker volume create tooljet_data
     # Chạy ToolJet container
-    docker run --name tooljet --restart unless-stopped -p 81:81 --platform linux/amd64 -v tooljet_data:/var/lib/postgresql/13/main tooljet/try:ee-lts-latest
+    docker run --name tooljet --restart unless-stopped -p 80:80 --platform linux/amd64 -v tooljet_data:/var/lib/postgresql/13/main tooljet/try:ee-lts-latest
   SHELL
 end
